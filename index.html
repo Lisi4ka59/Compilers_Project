@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Simple RISC Emulator</title>
+  <link rel="stylesheet" href="stylesheet.css">
+  <script src="main.js"></script>
+</head>
+
+<body>
+  <main>
+    <textarea id="code" placeholder="Source code"></textarea>
+    <output id="errorList"></output>
+    <div id="memoryTable">
+      <table>
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Hex</th>
+            <th>Decimal</th>
+            <th>Command</th>
+            <th>Explanation</th>
+          </tr>
+        </thead>
+        <tbody id="memoryTableBody"></tbody>
+        <tfoot>
+          <tr>
+            <th>Address</th>
+            <th>Hex</th>
+            <th>Decimal</th>
+            <th>Command</th>
+            <th>Explanation</th>
+          </tr>
+        </tfoot>
+      </table>
+
+      <button onclick="firstPage()">&lt;&lt;</button>
+      <button onclick="previousPage()">&lt;</button>
+      <div></div>
+      <button onclick="nextPage()">&gt;</button>
+      <button onclick="lastPage()">&gt;&gt;</button>
+    </div>
+    <div id="controlPanel">
+      <div>
+        <button onclick="reloadProgram()">Reload</button>
+        <button onclick="stepOnce()">Step once</button>
+        <button onclick="runProgram()">Run</button>
+        <button onclick="reloadAndRun()">Reload &amp; Run</button>
+        <button onclick="stopProgram()">Stop</button>
+      </div>
+    </div>
+    <textarea id="programInput" placeholder="Program input"></textarea>
+    <div>
+      <button style="width:100%" onclick="clearOutput()">Clear output</button>
+    </div>
+    <textarea id="programOutput" placeholder="Program output will be here" readonly></textarea>
+    <output id="registers"></output>
+  </main>
+</body>
+
+</html>
