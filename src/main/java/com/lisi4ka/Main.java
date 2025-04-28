@@ -39,17 +39,6 @@ public class Main {
 //print(c);
 //print(d);
 //
-//print("Вещественные числа");
-//e = 5.5 + 2.5;
-//f = 10.0 - 3;
-//g = 2 * 3.5;
-//h = 7.5 / 2;
-//
-//print(e);
-//print(f);
-//print(g);
-//print(h);
-//
 //print("Строки: конкатенация");
 //s1 = "hello" + " world";
 //print(s1);
@@ -93,35 +82,31 @@ public class Main {
 //                    print(s1 != s2);
 //                    """;
 
-//            program = """
-//                    print("Пример работы функции round");
-//                    x = 3.7;
-//                    y = round(x);
-//                    print(y);
-//
-//                    print("Условие без else");
-//                    a = 5;
-//                    b = 10;
-//                    if (a < b) {
-//                        print(1);
-//                    }
-//
-//                    print("Условие с else");
-//                    c = 15;
-//                    if (c < 10) {
-//                        print(0);
-//                    } else {
-//                        print(2);
-//                    }
-//
-//                    print("Цикл while");
-//                    i = 0;
-//                    while (i < 3) {
-//                        print(i);
-//                        i = i + 1;
-//                    }
-//
-//                    """;
+            program = """
+                 
+                    print("Условие без else");
+                    a = 5;
+                    b = 10;
+                    if (a < b) {
+                        print(1);
+                    }
+
+                    print("Условие с else");
+                    c = 15;
+                    if (c < 10) {
+                        print(0);
+                    } else {
+                        print(2);
+                    }
+
+                    print("Цикл while");
+                    i = 0;
+                    while (i < 3) {
+                        print(i);
+                        i = i + 1;
+                    }
+
+                    """;
 
 //            program = """
 //                    a = 0;
@@ -138,20 +123,21 @@ public class Main {
 //                    print(b);
 //                    """;
 
-            program = """
-                    a = 1071;
-                    b = 462;
-                    
-                    while (a != b) {
-                        if (a > b) {
-                            a = a - b;
-                        } else {
-                            b = b - a;
-                        }
-                    }
-                    print("НОД для чисел 1071 и 462:");
-                    print(a);
-                    """;
+//            program = """
+//                    a = 1071;
+//                    b = 462;
+//
+//                    while (a != b) {
+//                        if (a > b) {
+//                            a = a - b;
+//                        } else {
+//                            b = b - a;
+//                        }
+//                    }
+//                    l = "НОД для чисел 1071 и 462:";
+//                    print(l);
+//                    print(a);
+//                    """;
             System.out.println("Using default input:\n" + program);
         }
         System.out.println("Interpreting and running your MicroJathon program...");
@@ -169,9 +155,9 @@ public class Main {
         System.out.println("AST written to " + out.toAbsolutePath());
 
         RiscVCompiler compiler = new RiscVCompiler();
-        String asm = compiler.compile(tree);
-        Files.writeString(Paths.get("program.s"), asm);
-        System.out.println("RISC-V assembly written to program.s");
+        compiler.compile(tree);
+        System.out.println("RISC-V course assembly written to program.s");
+        ASTVisualizer.showTree(tree, parser);
 
         MicroJathonInterpreter interpreter = new MicroJathonInterpreter();
         interpreter.visit(tree);

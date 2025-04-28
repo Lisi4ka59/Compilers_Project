@@ -13,7 +13,11 @@ statement
 block: '{' statement* '}';
 
 expr
-    : expr op=('*'|'/') expr         # MulDivExpr
+
+    : expr 'or' expr                  # OrExpr
+    | expr 'and' expr                 # AndExpr
+    | 'not' expr                      # NotExpr
+    | expr op=('*'|'/') expr         # MulDivExpr
     | expr op=('+'|'-') expr         # AddSubExpr
     | expr op=('=='|'!='|'<'|'>'|'<='|'>=') expr # CompareExpr
     | 'round' '(' expr ')'           # RoundExpr
@@ -26,9 +30,10 @@ expr
 
 variable: ID;
 
-ID: [a-zA-Z_][a-zA-Z0-9_]*;
-INT: [0-9]+;
-FLOAT: [0-9]+ '.' [0-9]+;
-STRING: '"' (~["\\] | '\\' .)* '"';
-
-WS: [ \t\r\n]+ -> skip;
+// Lexer rules
+ID      : [a-zA-Z_] [a-zA-Z_0-9]*;
+INT     : [0-9]+;
+FLOAT   : [0-9]+'.'[0-9]+;
+STRING  : '"' (~["\\])* '"';
+WS      : [ \t\r\n]+ -> skip;
+COMMENT : '//' ~[\r\n]* -> skip;

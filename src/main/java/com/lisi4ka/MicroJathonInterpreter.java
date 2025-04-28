@@ -78,24 +78,12 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
         Object right = visit(ctx.expr(1));
         String op = ctx.op.getText();
 
-        if (left instanceof String && right instanceof String) {
-            if (op.equals("+")) {
-                return left + right.toString();
-            } else if (op.equals("-")) {
-                return left.toString().replace(right.toString(), "");
-            } else {
-                throw new RuntimeException("Unsupported operation on strings: " + op);
-            }
-        } else if (left instanceof String && right instanceof Integer && op.equals("*")) {
-            return left.toString().repeat((Integer) right);
-        } else if ((left instanceof Integer || left instanceof Double) &&
-                (right instanceof Integer || right instanceof Double)) {
+        if ((left instanceof Number) && (right instanceof Number)) {
             double l = toDouble(left);
             double r = toDouble(right);
             return op.equals("+") ? promote(l + r) : promote(l - r);
-        } else {
-            throw new RuntimeException("Unsupported operands for + or -");
         }
+        throw new RuntimeException("Unsupported operands for + or -");
     }
 
     @Override
@@ -104,18 +92,9 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
         Object right = visit(ctx.expr(1));
         String op = ctx.op.getText();
 
-        if ((left instanceof Integer || left instanceof Double) &&
-                (right instanceof Integer || right instanceof Double)) {
-            double l = toDouble(left);
-            double r = toDouble(right);
-            return op.equals("*") ? promote(l * r) : promote(l / r);
-        }
-
-        if (left instanceof String && right instanceof Integer && op.equals("*")) {
-            return ((String) left).repeat((Integer) right);
-        }
-
-        throw new RuntimeException("Unsupported operands for * or /");
+        double l = toDouble(left);
+        double r = toDouble(right);
+        return op.equals("*") ? promote(l * r) : promote(l / r);
     }
 
     @Override
@@ -124,37 +103,44 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
         Object right = visit(ctx.expr(1));
         String op = ctx.op.getText();
 
-        if ((left instanceof Integer || left instanceof Double) && (right instanceof Integer || right instanceof Double)) {
-            double l = toDouble(left);
-            double r = toDouble(right);
-            return switch (op) {
-                case "==" -> l == r ? 1 : 0;
-                case "!=" -> l != r ? 1 : 0;
-                case "<" -> l < r ? 1 : 0;
-                case ">" -> l > r ? 1 : 0;
-                case "<=" -> l <= r ? 1 : 0;
-                case ">=" -> l >= r ? 1 : 0;
-                default -> throw new RuntimeException("Invalid comparison operator");
-            };
-        } else if (left instanceof String && right instanceof String) {
-            if (op.equals("=="))
-                return left.equals(right) ? 1 : 0;
-            else if (op.equals("!="))
-                return left.equals(right) ? 0 : 1;
-        }
-
-        throw new RuntimeException("Unsupported comparison");
+        double l = toDouble(left);
+        double r = toDouble(right);
+        return switch (op) {
+            case "==" -> l == r ? 1 : 0;
+            case "!=" -> l != r ? 1 : 0;
+            case "<"  -> l < r ? 1 : 0;
+            case ">"  -> l > r ? 1 : 0;
+            case "<=" -> l <= r ? 1 : 0;
+            case ">=" -> l >= r ? 1 : 0;
+            default    -> throw new RuntimeException("Invalid comparison operator");
+        };
+    }
+    // New logical operators
+    @Override
+    public Object visitAndExpr(MicroJathonParser.AndExprContext ctx) {
+        Object l = visit(ctx.expr(0));
+        Object r = visit(ctx.expr(1));
+        int li = toInt(l);
+        int ri = toInt(r);
+        return (li != 0 && ri != 0) ? 1 : 0;
     }
 
     @Override
-    public Object visitRoundExpr(MicroJathonParser.RoundExprContext ctx) {
-        Object value = visit(ctx.expr());
-        if (value instanceof Double) {
-            return (int) Math.round((Double) value);
-        }
-        throw new RuntimeException("round expects a float");
+    public Object visitOrExpr(MicroJathonParser.OrExprContext ctx) {
+        Object l = visit(ctx.expr(0));
+        Object r = visit(ctx.expr(1));
+        int li = toInt(l);
+        int ri = toInt(r);
+        return (li != 0 || ri != 0) ? 1 : 0;
     }
 
+    @Override
+    public Object visitNotExpr(MicroJathonParser.NotExprContext ctx) {
+        Object v = visit(ctx.expr());
+        return toInt(v) == 0 ? 1 : 0;
+    }
+
+    // Helper conversions
     private int toInt(Object obj) {
         if (obj instanceof Integer) return (Integer) obj;
         if (obj instanceof Double) return (int) Math.round((Double) obj);
@@ -163,7 +149,7 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
 
     private double toDouble(Object obj) {
         if (obj instanceof Integer) return ((Integer) obj).doubleValue();
-        if (obj instanceof Double) return (Double) obj;
+        if (obj instanceof Double)  return (Double) obj;
         throw new RuntimeException("Cannot convert to double: " + obj);
     }
 

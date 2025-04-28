@@ -1,215 +1,336 @@
 package com.lisi4ka;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.*;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.io.IOException;
+import java.util.*;
 
 /**
- * A simple RISC-V code generator for MicroJathon programs.
- *
- * Usage:
- *   RiscVCompiler compiler = new RiscVCompiler();
- *   String asm = compiler.compile(tree);
- *   Files.writeString(Paths.get("program.s"), asm);
+ * RISC-V code generator for the course interpreter.
+ * Handles string literals, variables, and logical operators.
  */
-public class RiscVCompiler extends MicroJathonBaseVisitor<String> {
-    private StringBuilder data = new StringBuilder();
-    private StringBuilder text = new StringBuilder();
-    private Set<String> vars = new HashSet<>();
-    private int labelCount = 0;
+public class RiscVCompiler {
+    private final Set<String> vars = new LinkedHashSet<>();
+    private final Map<String, String> strLiterals = new LinkedHashMap<>();
+    private final Set<String> stringVars = new HashSet<>();
+    private final List<String> lines = new ArrayList<>();
+    private int literalCount = 0;
+    private int lblCount = 0;
 
     /**
-     * Compile the ANTLR parse tree into a RISC-V assembly string.
+     * Compile the parse tree and write to 'program.s'.
      */
-    public String compile(ParseTree tree) {
-        // Data section with newline definition
-        data.append(".data\n");
-        data.append("newline: .asciiz \"\\n\"\n");
+    public void compile(ParseTree tree) throws IOException {
+        new VarCollector().visit(tree);
 
-        // Text section and entry point
-        text.append(".text\n.globl main\nmain:\n");
+        // Emit main at address 0
+        lines.add("main:");
+        new CodeGenVisitor().visit(tree);
+        lines.add("ebreak");
+        lines.add("");
 
-        // Generate code
-        visit(tree);
+        // Emit print_int subroutine
+        emitPrintIntSubroutine();
+        lines.add("");
 
-        // Exit syscall
-        text.append("li a7, 93\n");
-        text.append("ecall\n");
-
-        return data.toString() + "\n" + text.toString();
-    }
-
-    // Ensure a variable has space allocated in the .data section
-    private void ensureVar(String name) {
-        if (vars.add(name)) {
-            data.append(name).append(": .word 0\n");
-        }
-    }
-
-    @Override
-    public String visit(org.antlr.v4.runtime.tree.ParseTree tree) {
-        // Delegate to program rule if applicable
-        return super.visit(tree);
-    }
-
-    @Override
-    public String visitProgram(MicroJathonParser.ProgramContext ctx) {
-        for (MicroJathonParser.StatementContext stmt : ctx.statement()) {
-            visit(stmt);
-        }
-        return null;
-    }
-    @Override
-    public String visitStatement(MicroJathonParser.StatementContext ctx) {
-        // Variable assignment
-        if (ctx.variable() != null && ctx.expr() != null) {
-            String name = ctx.variable().getText();
-            ensureVar(name);
-            String reg = visit(ctx.expr());
-            text.append("sw ").append(reg).append(", ").append(name).append("\n");
-
-            // Print statement
-        } else if (ctx.getChild(0).getText().equals("print")) {
-            // String literal print
-            if (ctx.expr() instanceof MicroJathonParser.StringExprContext) {
-                String raw = ((MicroJathonParser.StringExprContext) ctx.expr()).STRING().getText();
-                String lbl = "str" + (labelCount++);
-                data.append(lbl).append(": .asciiz ").append(raw).append("\n");
-                text.append("la a0, ").append(lbl).append("\n");
-                text.append("li a7, 4\necall\n");
-            } else {
-                // Numeric print
-                String reg = visit(ctx.expr());
-                text.append("mv a0, ").append(reg).append("\n");
-                text.append("li a7, 1\necall\n");
+        // Emit string literal data
+        for (Map.Entry<String, String> entry : strLiterals.entrySet()) {
+            String lbl = entry.getKey();
+            String val = entry.getValue();
+            lines.add(lbl + ":");
+            for (char c : val.toCharArray()) {
+                lines.add("data " + (int) c + " * 1");
             }
-            // Newline
-            text.append("la a0, newline\nli a7, 4\necall\n");
-
-            // If-else
-        } else if (ctx.getChild(0).getText().equals("if")) {
-            String cond = visit(ctx.expr());
-            String elseLbl = "L" + (labelCount++);
-            String endLbl  = "L" + (labelCount++);
-            text.append("beqz ").append(cond).append(", ").append(elseLbl).append("\n");
-            visit(ctx.block(0));
-            text.append("j ").append(endLbl).append("\n");
-            text.append(elseLbl).append(":\n");
-            if (ctx.block().size() > 1) visit(ctx.block(1));
-            text.append(endLbl).append(":\n");
-
-            // While loop
-        } else if (ctx.getChild(0).getText().equals("while")) {
-            String startLbl = "L" + (labelCount++);
-            String endLbl   = "L" + (labelCount++);
-            text.append(startLbl).append(":\n");
-            String cond = visit(ctx.expr());
-            text.append("beqz ").append(cond).append(", ").append(endLbl).append("\n");
-            visit(ctx.block(0));
-            text.append("j ").append(startLbl).append("\n");
-            text.append(endLbl).append(":\n");
-
-            // Block alone
-        } else {
-            visit(ctx.block(0));
+            lines.add("data 0 * 1"); // null terminator
+            lines.add("");
         }
-        return null;
-    }
 
-    // Expression visitors return the register (always t0) containing the result
-
-    @Override
-    public String visitVarExpr(MicroJathonParser.VarExprContext ctx) {
-        String name = ctx.getText();
-        ensureVar(name);
-        text.append("lw t0, ").append(name).append("\n");
-        return "t0";
-    }
-
-    @Override
-    public String visitIntExpr(MicroJathonParser.IntExprContext ctx) {
-        text.append("li t0, ").append(ctx.getText()).append("\n");
-        return "t0";
-    }
-
-    @Override
-    public String visitFloatExpr(MicroJathonParser.FloatExprContext ctx) {
-        throw new UnsupportedOperationException("Floating-point not supported");
-    }
-
-    @Override
-    public String visitStringExpr(MicroJathonParser.StringExprContext ctx) {
-        throw new UnsupportedOperationException("StringExpr only in print");
-    }
-
-    @Override
-    public String visitParenExpr(MicroJathonParser.ParenExprContext ctx) {
-        return visit(ctx.expr());
-    }
-
-    // Binary ops: push left, eval right, pop left, combine into t0
-
-    @Override
-    public String visitAddSubExpr(MicroJathonParser.AddSubExprContext ctx) {
-        String left = visit(ctx.expr(0));
-        text.append("addi sp, sp, -4\n");
-        text.append("sw ").append(left).append(", 0(sp)\n");
-        String right = visit(ctx.expr(1));
-        text.append("lw t1, 0(sp)\naddi sp, sp, 4\n");
-        if (ctx.op.getText().equals("+")) text.append("add t0, t1, ").append(right).append("\n");
-        else text.append("sub t0, t1, ").append(right).append("\n");
-        return "t0";
-    }
-
-    @Override
-    public String visitMulDivExpr(MicroJathonParser.MulDivExprContext ctx) {
-        String left = visit(ctx.expr(0));
-        text.append("addi sp, sp, -4\n");
-        text.append("sw ").append(left).append(", 0(sp)\n");
-        String right = visit(ctx.expr(1));
-        text.append("lw t1, 0(sp)\naddi sp, sp, 4\n");
-        if (ctx.op.getText().equals("*")) text.append("mul t0, t1, ").append(right).append("\n");
-        else text.append("div t0, t1, ").append(right).append("\n");
-        return "t0";
-    }
-
-    @Override
-    public String visitCompareExpr(MicroJathonParser.CompareExprContext ctx) {
-        String left = visit(ctx.expr(0));
-        text.append("addi sp, sp, -4\n");
-        text.append("sw ").append(left).append(", 0(sp)\n");
-        String right = visit(ctx.expr(1));
-        text.append("lw t1, 0(sp)\naddi sp, sp, 4\n");
-        String op = ctx.op.getText();
-        switch (op) {
-            case "==":
-                text.append("sub t0, t1, ").append(right).append("\nseqz t0, t0\n");
-                break;
-            case "!=":
-                text.append("sub t0, t1, ").append(right).append("\nsnez t0, t0\n");
-                break;
-            case "<":
-                text.append("slt t0, t1, ").append(right).append("\n");
-                break;
-            case "<=":
-                text.append("sgt t0, t1, ").append(right).append("\nseqz t0, t0\n");
-                break;
-            case ">":
-                text.append("sgt t0, t1, ").append(right).append("\n");
-                break;
-            case ">=":
-                text.append("slt t0, t1, ").append(right).append("\nseqz t0, t0\n");
-                break;
-            default:
-                throw new RuntimeException("Unknown compare: " + op);
+        // Emit variable storage
+        for (String var : vars) {
+            lines.add(var + ":");
+            lines.add("data 0 * 1");
         }
-        return "t0";
+        if (!vars.isEmpty()) {
+            lines.add("");
+        }
+
+        // Emit buffer for integer printing
+        lines.add("buf:");
+        lines.add("data 0 * 12");
+
+        // Write to file
+        Files.write(Paths.get("program.s"), lines);
     }
 
-    @Override
-    public String visitRoundExpr(MicroJathonParser.RoundExprContext ctx) {
-        throw new UnsupportedOperationException("round() not supported");
+    // Visitor to collect variables and string literals
+    private class VarCollector extends MicroJathonBaseVisitor<Void> {
+        @Override
+        public Void visitStatement(MicroJathonParser.StatementContext ctx) {
+            if (ctx.variable() != null && ctx.expr() != null) {
+                String var = ctx.variable().getText();
+                vars.add(var);
+                if (ctx.expr() instanceof MicroJathonParser.StringExprContext) {
+                    String raw = ((MicroJathonParser.StringExprContext) ctx.expr()).STRING().getText();
+                    String content = raw.substring(1, raw.length() - 1);
+                    stringVars.add(var);
+                    String lbl = "str" + (literalCount++);
+                    strLiterals.put(lbl, content);
+                }
+            }
+            return super.visitChildren(ctx);
+        }
+    }
+
+    // Visitor to generate code lines
+    private class CodeGenVisitor extends MicroJathonBaseVisitor<Void> {
+        @Override
+        public Void visitProgram(MicroJathonParser.ProgramContext ctx) {
+            for (MicroJathonParser.StatementContext stmt : ctx.statement()) {
+                visitStatement(stmt);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitStatement(MicroJathonParser.StatementContext ctx) {
+            if (ctx.variable() != null && ctx.expr() instanceof MicroJathonParser.StringExprContext) {
+                // String assignment
+                String var = ctx.variable().getText();
+                String lbl = getLiteralLabelFor(var);
+                lines.add("li x7, " + lbl);
+                lines.add("li x6, " + var);
+                lines.add("sw x6, 0, x7");
+
+            } else if (ctx.variable() != null && ctx.expr() != null) {
+                // Numeric assignment
+                visit(ctx.expr()); // result in x5
+                lines.add("li x6, " + ctx.variable().getText());
+                lines.add("sw x6, 0, x5");
+
+            } else if (ctx.getChild(0).getText().equals("print")) {
+                // Print statement
+                visitPrint(ctx);
+
+            } else if (ctx.getChild(0).getText().equals("if")) {
+                // If-else
+                String L1 = newLabel();
+                String L2 = newLabel();
+                visit(ctx.expr()); // x5
+                lines.add("beq x5, x0, " + L1);
+                visit(ctx.block(0));
+                lines.add("jal x0, " + L2);
+                lines.add(L1 + ":");
+                if (ctx.block().size() > 1) {
+                    visit(ctx.block(1));
+                }
+                lines.add(L2 + ":");
+
+            } else if (ctx.getChild(0).getText().equals("while")) {
+                // While loop
+                String L1 = newLabel();
+                String L2 = newLabel();
+                lines.add(L1 + ":");
+                visit(ctx.expr()); // x5
+                lines.add("beq x5, x0, " + L2);
+                visit(ctx.block(0));
+                lines.add("jal x0, " + L1);
+                lines.add(L2 + ":");
+
+            } else {
+                // Nested block
+                visit(ctx.block(0));
+            }
+            return null;
+        }
+
+        // Handle print logic
+        private void visitPrint(MicroJathonParser.StatementContext ctx) {
+            MicroJathonParser.ExprContext expr = ctx.expr();
+            if (expr instanceof MicroJathonParser.StringExprContext) {
+                // Inline string literal
+                String raw = ((MicroJathonParser.StringExprContext) expr).STRING().getText();
+                String s = raw.substring(1, raw.length() - 1);
+                for (char c : s.toCharArray()) {
+                    lines.add("li x10, " + (int) c);
+                    lines.add("ewrite x10");
+                }
+            } else if (expr instanceof MicroJathonParser.VarExprContext && stringVars.contains(expr.getText())) {
+                // String variable print
+                String var = expr.getText();
+                lines.add("li x6, " + var);
+                lines.add("lw x10, x6, 0");
+                String loop = newLabel();
+                String end = newLabel();
+                lines.add("beq x10, x0, " + end);
+                lines.add(loop + ":");
+                lines.add("lw x11, x10, 0");
+                lines.add("beq x11, x0, " + end);
+                lines.add("ewrite x11");
+                lines.add("addi x10, x10, 1");
+                lines.add("jal x0, " + loop);
+                lines.add(end + ":");
+            } else {
+                // Numeric or logical expression
+                visit(expr);        // result in x5
+                lines.add("addi x10, x5, 0");
+                lines.add("jal x1, print_int");
+            }
+            lines.add("li x10, 10");
+            lines.add("ewrite x10");
+        }
+
+        @Override
+        public Void visitVarExpr(MicroJathonParser.VarExprContext ctx) {
+            String v = ctx.getText();
+            lines.add("li x7, " + v);
+            if (stringVars.contains(v)) {
+                lines.add("lw x10, x7, 0");
+            } else {
+                lines.add("lw x5, x7, 0");
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitIntExpr(MicroJathonParser.IntExprContext ctx) {
+            lines.add("li x5, " + ctx.getText());
+            return null;
+        }
+
+        @Override
+        public Void visitAddSubExpr(MicroJathonParser.AddSubExprContext ctx) {
+            visit(ctx.expr(0));
+            lines.add("addi x6, x5, 0");
+            visit(ctx.expr(1));
+            lines.add(ctx.op.getText().equals("+") ? "add x5, x6, x5" : "sub x5, x6, x5");
+            return null;
+        }
+
+        @Override
+        public Void visitMulDivExpr(MicroJathonParser.MulDivExprContext ctx) {
+            visit(ctx.expr(0));
+            lines.add("addi x6, x5, 0");
+            visit(ctx.expr(1));
+            lines.add(ctx.op.getText().equals("*") ? "mul x5, x6, x5" : "div x5, x6, x5");
+            return null;
+        }
+
+        @Override
+        public Void visitCompareExpr(MicroJathonParser.CompareExprContext ctx) {
+            visit(ctx.expr(0));
+            lines.add("addi x6, x5, 0");
+            visit(ctx.expr(1));
+            switch (ctx.op.getText()) {
+                case "==": lines.add("seq x5, x6, x5"); break;
+                case "!=": lines.add("sne x5, x6, x5"); break;
+                case "<":  lines.add("slt x5, x6, x5"); break;
+                case ">":  lines.add("slt x5, x5, x6"); break;
+                case ">=": lines.add("sge x5, x6, x5"); break;
+                case "<=": lines.add("sge x5, x5, x6"); break;
+                default: throw new RuntimeException("Unknown cmp: " + ctx.op.getText());
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitAndExpr(MicroJathonParser.AndExprContext ctx) {
+            visit(ctx.expr(0));                // x5 = left
+            lines.add("addi x6, x5, 0");       // x6 = left
+            visit(ctx.expr(1));                // x5 = right
+            // boolean and: (left!=0)&&(right!=0)
+            lines.add("sne x6, x6, x0");      // x6= left!=0
+            lines.add("sne x5, x5, x0");      // x5= right!=0
+            lines.add("and x5, x6, x5");     // x5= x6 & x5
+            return null;
+        }
+
+        @Override
+        public Void visitOrExpr(MicroJathonParser.OrExprContext ctx) {
+            visit(ctx.expr(0));
+            lines.add("addi x6, x5, 0");
+            visit(ctx.expr(1));
+            // boolean or: (left!=0)||(right!=0)
+            lines.add("sne x6, x6, x0");
+            lines.add("sne x5, x5, x0");
+            lines.add("or x5, x6, x5");
+            return null;
+        }
+
+        @Override
+        public Void visitNotExpr(MicroJathonParser.NotExprContext ctx) {
+            visit(ctx.expr());                // x5
+            // boolean not: x5 == 0 ?1:0
+            lines.add("seq x5, x5, x0");
+            return null;
+        }
+
+        @Override
+        public Void visitBlock(MicroJathonParser.BlockContext ctx) {
+            for (MicroJathonParser.StatementContext s : ctx.statement()) {
+                visit(s);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitFloatExpr(MicroJathonParser.FloatExprContext ctx) { throw new UnsupportedOperationException("Floating-point not supported"); }
+        @Override
+        public Void visitStringExpr(MicroJathonParser.StringExprContext ctx) { return null; }
+        @Override
+        public Void visitParenExpr(MicroJathonParser.ParenExprContext ctx) { return visit(ctx.expr()); }
+        @Override
+        public Void visitRoundExpr(MicroJathonParser.RoundExprContext ctx) { throw new UnsupportedOperationException("round() not supported"); }
+    }
+
+    private String getLiteralLabelFor(String var) {
+        for (String lbl : strLiterals.keySet()) {
+            if (stringVars.contains(var)) {
+                return lbl;
+            }
+        }
+        throw new RuntimeException("No literal for var " + var);
+    }
+
+    private String newLabel() {
+        return "L" + (lblCount++);
+    }
+
+    private void emitPrintIntSubroutine() {
+        lines.add("print_int:");
+        lines.add("beq x10, x0, print_int_zero");
+        lines.add("blt x10, x0, print_int_neg");
+        lines.add("addi x5, x10, 0");
+        lines.add("li x6, 0");
+        lines.add("li x7, 10");
+        lines.add("print_div_loop:");
+        lines.add("div x8, x5, x7");
+        lines.add("rem x9, x5, x7");
+        lines.add("addi x5, x8, 0");
+        lines.add("li x11, buf");
+        lines.add("add x11, x11, x6");
+        lines.add("sw x11, 0, x9");
+        lines.add("addi x6, x6, 1");
+        lines.add("bne x5, x0, print_div_loop");
+        lines.add("print_print_loop:");
+        lines.add("addi x6, x6, -1");
+        lines.add("li x11, 48");
+        lines.add("li x13, buf");
+        lines.add("add x13, x13, x6");
+        lines.add("lw x9, x13, 0");
+        lines.add("add x11, x11, x9");
+        lines.add("ewrite x11");
+        lines.add("bne x6, x0, print_print_loop");
+        lines.add("jalr x0, x1, 0");
+        lines.add("print_int_zero:");
+        lines.add("li x11, 48");
+        lines.add("ewrite x11");
+        lines.add("jalr x0, x1, 0");
+        lines.add("print_int_neg:");
+        lines.add("li x11, 45");
+        lines.add("ewrite x11");
+        lines.add("sub x5, x0, x10");
+        lines.add("addi x10, x5, 0");
+        lines.add("jal x0, print_int");
     }
 }

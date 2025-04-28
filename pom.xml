@@ -15,6 +15,11 @@
             <artifactId>antlr4-runtime</artifactId>
             <version>4.13.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <version>4.13.2</version> <!-- или 4.9.3, или версия, с которой ты работаешь -->
+        </dependency>
     </dependencies>
 
     <build>
