@@ -6,24 +6,17 @@ import org.antlr.v4.gui.TreeViewer;
 import javax.swing.*;
 import java.util.Arrays;
 
-public class ASTVisualizer {
+public abstract class ASTVisualizer {
 
     public static void showTree(ParseTree tree, MicroJathonParser parser) {
-        // Создаем окно
         JFrame frame = new JFrame("AST Viewer");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Создаем компонент TreeViewer
         TreeViewer viewer = new TreeViewer(Arrays.asList(parser.getRuleNames()), tree);
-        viewer.setScale(1.5); // Увеличить масштаб для лучшей читаемости
-
-        // Добавляем скроллинг
+        viewer.setScale(1.5);
         JScrollPane scrollPane = new JScrollPane(viewer);
         frame.add(scrollPane);
-
-        // Размер окна
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null); // Центрировать
+        frame.setSize(1920, 1080);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

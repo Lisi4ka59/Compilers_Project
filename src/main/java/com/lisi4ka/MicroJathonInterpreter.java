@@ -108,14 +108,14 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
         return switch (op) {
             case "==" -> l == r ? 1 : 0;
             case "!=" -> l != r ? 1 : 0;
-            case "<"  -> l < r ? 1 : 0;
-            case ">"  -> l > r ? 1 : 0;
+            case "<" -> l < r ? 1 : 0;
+            case ">" -> l > r ? 1 : 0;
             case "<=" -> l <= r ? 1 : 0;
             case ">=" -> l >= r ? 1 : 0;
-            default    -> throw new RuntimeException("Invalid comparison operator");
+            default -> throw new RuntimeException("Invalid comparison operator");
         };
     }
-    // New logical operators
+
     @Override
     public Object visitAndExpr(MicroJathonParser.AndExprContext ctx) {
         Object l = visit(ctx.expr(0));
@@ -140,7 +140,6 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
         return toInt(v) == 0 ? 1 : 0;
     }
 
-    // Helper conversions
     private int toInt(Object obj) {
         if (obj instanceof Integer) return (Integer) obj;
         if (obj instanceof Double) return (int) Math.round((Double) obj);
@@ -149,7 +148,7 @@ public class MicroJathonInterpreter extends MicroJathonBaseVisitor<Object> {
 
     private double toDouble(Object obj) {
         if (obj instanceof Integer) return ((Integer) obj).doubleValue();
-        if (obj instanceof Double)  return (Double) obj;
+        if (obj instanceof Double) return (Double) obj;
         throw new RuntimeException("Cannot convert to double: " + obj);
     }
 

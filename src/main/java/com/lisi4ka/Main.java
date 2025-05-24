@@ -142,17 +142,14 @@ public class Main {
         MicroJathonInterpreter interpreter = new MicroJathonInterpreter();
         interpreter.visit(tree);
 
-        // 2) Save the AST (parse‐tree) to a file:
-        String ast = tree.toStringTree(parser);
-        Path out = Paths.get("ast.txt");
-        Files.writeString(out, ast);
-        System.out.println("AST written to " + out.toAbsolutePath());
+        Path astOut = Paths.get("ast.txt");
+        Files.writeString(astOut, tree.toStringTree(parser));
+        System.out.println("AST written to " + astOut.toAbsolutePath());
 
         RiscVCompiler compiler = new RiscVCompiler();
-        compiler.compile(tree);
-        System.out.println("RISC-V assembly written to program.s");
+        Path compilerOut = Paths.get("program.s");
+        Files.write(compilerOut, compiler.compile(tree));
+        System.out.println("RISC-V assembly written to " + compilerOut.toAbsolutePath());
         ASTVisualizer.showTree(tree, parser);
-
-
     }
 }
