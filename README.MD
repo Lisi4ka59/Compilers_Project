@@ -3,9 +3,13 @@
 ## Инструкция по развертыванию в IntelliJ IDEA
 
 1) Скачиваем плагин ANTLR V4-Tool для работы с антлером
-![Снимок экрана 2025-05-24 в 15.23.25.png](../../Desktop/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202025-05-24%20%D0%B2%2015.23.25.png)
-2) В каталоге src/main/antlr4 находим файл MicroJathon.g4
+
+<img src="resources/ANTLR plugin.png" alt="Скриншот" width="120"/>
+
+2) В каталоге [`src/main/antlr4`](src/main/antlr4) находим файл [`MicroJathon.g4`](src/main/antlr4/MicroJathon.g4)
 3) Нажимаем правой кнопкой мыши на этот файл, выбираем Configure ANTLR и заполняем поля как на скриншоте, применяем изменения
-![Снимок экрана 2025-05-24 в 15.27.19.png](../../Desktop/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202025-05-24%20%D0%B2%2015.27.19.png)
+   
+<img src="resources/ANTLR config.png" alt="Скриншот" width="400"/>
+
 4) Снова нажимаем правой кнопкой мыши на этот файл, выбираем Generate ANTLR Recognizer
 5) Можно запускать программу
