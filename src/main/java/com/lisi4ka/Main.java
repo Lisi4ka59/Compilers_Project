@@ -69,14 +69,6 @@ public class Main {
 //                    print(b >= c);
 //                    print(a == b);
 //
-//                    print("Вещественные сравнения");
-//                    f1 = 3.5;
-//                    f2 = 3.5;
-//                    f3 = 4.0;
-//                    print(f1 == f2);
-//                    print(f1 != f3);
-//                    print(f1 < f3);
-//
 //                    print("Сравнение строк");
 //                    print(s1 == s3);
 //                    print(s1 != s2);
@@ -147,6 +139,8 @@ public class Main {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         MicroJathonParser parser = new MicroJathonParser(tokens);
         ParseTree tree = parser.program();
+        MicroJathonInterpreter interpreter = new MicroJathonInterpreter();
+        interpreter.visit(tree);
 
         // 2) Save the AST (parse‐tree) to a file:
         String ast = tree.toStringTree(parser);
@@ -156,10 +150,9 @@ public class Main {
 
         RiscVCompiler compiler = new RiscVCompiler();
         compiler.compile(tree);
-        System.out.println("RISC-V course assembly written to program.s");
+        System.out.println("RISC-V assembly written to program.s");
         ASTVisualizer.showTree(tree, parser);
 
-        MicroJathonInterpreter interpreter = new MicroJathonInterpreter();
-        interpreter.visit(tree);
+
     }
 }
