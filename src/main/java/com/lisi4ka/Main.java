@@ -74,46 +74,46 @@ public class Main {
 //                    print(s1 != s2);
 //                    """;
 
-            program = """
-                 
-                    print("Условие без else");
-                    a = 5;
-                    b = 10;
-                    if (a < b) {
-                        print(1);
-                    }
-
-                    print("Условие с else");
-                    c = 15;
-                    if (c < 10) {
-                        print(0);
-                    } else {
-                        print(2);
-                    }
-
-                    print("Цикл while");
-                    i = 0;
-                    while (i < 3) {
-                        print(i);
-                        i = i + 1;
-                    }
-
-                    """;
-
 //            program = """
-//                    a = 0;
-//                    b = 1;
-//                    i = 2;
 //
-//                    while (i <= 28) {
-//                        temp = b;
-//                        b = a + b;
-//                        a = temp;
+//                    print("Условие без else");
+//                    a = 5;
+//                    b = 10;
+//                    if (a < b) {
+//                        print(1);
+//                    }
+//
+//                    print("Условие с else");
+//                    c = 15;
+//                    if (c < 10) {
+//                        print(0);
+//                    } else {
+//                        print(2);
+//                    }
+//
+//                    print("Цикл while");
+//                    i = 0;
+//                    while (i < 3) {
+//                        print(i);
 //                        i = i + 1;
 //                    }
-//                    print("28-й элемент ряда Фибоначчи:");
-//                    print(b);
+//
 //                    """;
+
+            program = """
+                    a = 0;
+                    b = 1;
+                    i = 2;
+
+                    while (i <= 28) {
+                        temp = b;
+                        b = a + b;
+                        a = temp;
+                        i = i + 1;
+                    }
+                    print("28-й элемент ряда Фибоначчи:");
+                    print(b);
+                    """;
 
 //            program = """
 //                    a = 1071;

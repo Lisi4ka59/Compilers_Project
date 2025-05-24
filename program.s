@@ -1,149 +1,36 @@
 main:
-li x10, 1059
-ewrite x10
-li x10, 1089
-ewrite x10
-li x10, 1083
-ewrite x10
-li x10, 1086
-ewrite x10
-li x10, 1074
-ewrite x10
-li x10, 1080
-ewrite x10
-li x10, 1077
-ewrite x10
-li x10, 32
-ewrite x10
-li x10, 1073
-ewrite x10
-li x10, 1077
-ewrite x10
-li x10, 1079
-ewrite x10
-li x10, 32
-ewrite x10
-li x10, 101
-ewrite x10
-li x10, 108
-ewrite x10
-li x10, 115
-ewrite x10
-li x10, 101
-ewrite x10
-li x10, 10
-ewrite x10
-li x5, 5
+li x5, 0
 li x6, a
 sw x6, 0, x5
-li x5, 10
+li x5, 1
 li x6, b
+sw x6, 0, x5
+li x5, 2
+li x6, i
+sw x6, 0, x5
+L0:
+li x7, i
+lw x5, x7, 0
+addi x6, x5, 0
+li x5, 28
+sge x5, x5, x6
+beq x5, x0, L1
+li x7, b
+lw x5, x7, 0
+li x6, temp
 sw x6, 0, x5
 li x7, a
 lw x5, x7, 0
 addi x6, x5, 0
 li x7, b
 lw x5, x7, 0
-slt x5, x6, x5
-beq x5, x0, L0
-li x5, 1
-addi x10, x5, 0
-jal x1, print_int
-li x10, 10
-ewrite x10
-jal x0, L1
-L0:
-L1:
-li x10, 1059
-ewrite x10
-li x10, 1089
-ewrite x10
-li x10, 1083
-ewrite x10
-li x10, 1086
-ewrite x10
-li x10, 1074
-ewrite x10
-li x10, 1080
-ewrite x10
-li x10, 1077
-ewrite x10
-li x10, 32
-ewrite x10
-li x10, 1089
-ewrite x10
-li x10, 32
-ewrite x10
-li x10, 101
-ewrite x10
-li x10, 108
-ewrite x10
-li x10, 115
-ewrite x10
-li x10, 101
-ewrite x10
-li x10, 10
-ewrite x10
-li x5, 15
-li x6, c
+add x5, x6, x5
+li x6, b
 sw x6, 0, x5
-li x7, c
+li x7, temp
 lw x5, x7, 0
-addi x6, x5, 0
-li x5, 10
-slt x5, x6, x5
-beq x5, x0, L2
-li x5, 0
-addi x10, x5, 0
-jal x1, print_int
-li x10, 10
-ewrite x10
-jal x0, L3
-L2:
-li x5, 2
-addi x10, x5, 0
-jal x1, print_int
-li x10, 10
-ewrite x10
-L3:
-li x10, 1062
-ewrite x10
-li x10, 1080
-ewrite x10
-li x10, 1082
-ewrite x10
-li x10, 1083
-ewrite x10
-li x10, 32
-ewrite x10
-li x10, 119
-ewrite x10
-li x10, 104
-ewrite x10
-li x10, 105
-ewrite x10
-li x10, 108
-ewrite x10
-li x10, 101
-ewrite x10
-li x10, 10
-ewrite x10
-li x5, 0
-li x6, i
+li x6, a
 sw x6, 0, x5
-L4:
-li x7, i
-lw x5, x7, 0
-addi x6, x5, 0
-li x5, 3
-slt x5, x6, x5
-beq x5, x0, L5
-li x7, i
-lw x5, x7, 0
-addi x10, x5, 0
-jal x1, print_int
-li x10, 10
-ewrite x10
 li x7, i
 lw x5, x7, 0
 addi x6, x5, 0
@@ -151,8 +38,72 @@ li x5, 1
 add x5, x6, x5
 li x6, i
 sw x6, 0, x5
-jal x0, L4
-L5:
+jal x0, L0
+L1:
+li x10, 50
+ewrite x10
+li x10, 56
+ewrite x10
+li x10, 45
+ewrite x10
+li x10, 1081
+ewrite x10
+li x10, 32
+ewrite x10
+li x10, 1101
+ewrite x10
+li x10, 1083
+ewrite x10
+li x10, 1077
+ewrite x10
+li x10, 1084
+ewrite x10
+li x10, 1077
+ewrite x10
+li x10, 1085
+ewrite x10
+li x10, 1090
+ewrite x10
+li x10, 32
+ewrite x10
+li x10, 1088
+ewrite x10
+li x10, 1103
+ewrite x10
+li x10, 1076
+ewrite x10
+li x10, 1072
+ewrite x10
+li x10, 32
+ewrite x10
+li x10, 1060
+ewrite x10
+li x10, 1080
+ewrite x10
+li x10, 1073
+ewrite x10
+li x10, 1086
+ewrite x10
+li x10, 1085
+ewrite x10
+li x10, 1072
+ewrite x10
+li x10, 1095
+ewrite x10
+li x10, 1095
+ewrite x10
+li x10, 1080
+ewrite x10
+li x10, 58
+ewrite x10
+li x10, 10
+ewrite x10
+li x7, b
+lw x5, x7, 0
+addi x10, x5, 0
+jal x1, print_int
+li x10, 10
+ewrite x10
 ebreak
 
 print_int:
@@ -195,9 +146,9 @@ a:
 data 0 * 1
 b:
 data 0 * 1
-c:
-data 0 * 1
 i:
+data 0 * 1
+temp:
 data 0 * 1
 
 buf:
